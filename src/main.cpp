@@ -12,7 +12,7 @@
 #define LED_Y 18
 #define LED_G 5
 
-WiFiManager wifi("TP-Link_22C2", "69562495");
+WiFiManager wifi("Galaxy A316AF1", "patatata");
 MQTTManager mqtt("broker.hivemq.com", 1883);
 /// ver informacion del sensor topic: casa/sensor/distancia
 /// control de actuadores topic: casa/led/control
