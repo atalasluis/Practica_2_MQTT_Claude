@@ -45,10 +45,25 @@
     - Control de Actuadores: Se delegó la toma de decisiones al cliente MQTT (App Móvil), haciendo al ESP32 un objeto puramente reactivo a comandos específicos (GREEN, YELLOW, RED, DANGER).
 ### 3.2 Aplicación Móvil
     Se configuró un dashboard interactivo conectado al broker público broker.hivemq.com por el puerto 1883, permitiendo visualización en tiempo real del sensor y envío de comandos hacia los actuadores.
+### 3.3 Integración con Inteligencia Artificial (MCP Agents)
+Para dar cumplimiento al requisito de integración con IA, se desarrolló un servidor intermediario utilizando Node.js y el estándar **Model Context Protocol (MCP)**. Dado que los LLMs (Large Language Models) no poseen interfaces de hardware nativas, este servidor actúa como un puente bidireccional entre Claude Desktop y el ecosistema IoT.
+
+Se definieron dos herramientas (Tools) principales para el Agente:
+1. **`leer_sensor_distancia`**: El servidor Node.js se suscribe al topic `casa/sensor/distancia`, manteniendo en memoria la última lectura. Cuando Claude invoca esta herramienta, el servidor le retorna el valor numérico como contexto.
+2. **`controlar_leds`**: Claude puede invocar esta herramienta pasando como argumento un estado deseado (`GREEN`, `YELLOW`, `RED`, `DANGER`). El servidor MCP traduce esta intención del lenguaje natural y publica el comando exacto en el topic `casa/led/control`.
+
+Esta arquitectura permite que el usuario interactúe con el objeto inteligente utilizando lenguaje natural, delegando la lógica de decisión condicional ("Si la distancia es menor a X, enciende Y") a la capacidad de razonamiento del modelo de lenguaje.
 ## 4. Plan de Pruebas y Validación
     El siguiente plan de pruebas asegura que cada Requerimiento (RF y RNF) sea validado experimentalmente.
 ### 4.1 Matriz de Pruebas de Requerimientos
-    ID PruebaReq. AsociadoAcción a realizarResultado ObtenidoVeredictoPR-01RF-01, RNF-02Monitorear el broker MQTT durante 10 segundos.Se reciben 10 mensajes con datos estables filtrados.PasaPR-02RF-02Enviar payload RED desde HiveMQ Web Client.Los 3 LEDs se encienden inmediatamente sin parpadear.PasaPR-03RF-03Enviar payload DANGER desde app móvil.Los 3 LEDs parpadean a intervalos de 300ms.Pasa
+    ### 4.1 Matriz de Pruebas de Requerimientos
+
+| ID Prueba | Req. Asociado | Acción a realizar | Resultado Obtenido | Veredicto |
+| :--- | :--- | :--- | :--- | :--- |
+| **PR-01** | RF-01, RNF-02 | Monitorear el broker MQTT durante 10 segundos. | Se reciben 10 mensajes con datos estables filtrados. | **Pasa** |
+| **PR-02** | RF-02 | Enviar payload `RED` desde HiveMQ Web Client. | Los 3 LEDs se encienden inmediatamente sin parpadear. | **Pasa** |
+| **PR-03** | RF-03 | Enviar payload `DANGER` desde app móvil. | Los 3 LEDs parpadean a intervalos de 300ms. | **Pasa** |
+| **PR-04** | RF-04 | Enviar prompt a Claude: "Lee el sensor y si es menor a 20cm activa alerta DANGER". | Claude recupera la distancia, evalúa la condición lógica y publica el comando en MQTT. Los LEDs responden físicamente. | **Pasa** |
 ### 4.2 Pruebas de Precisión (RNF-03) con Muestreo Múltiple
     Para simular un entorno dinámico, se tomaron 5 muestras independientes reposicionando el objeto ligeramente por cada distancia. Se probaron dos materiales distintos.
     Material 1: Caja de Cartón (Superficie Plana)
@@ -75,3 +90,4 @@
     - Cumplimiento del alcance: Se alcanzó un 100% de cumplimiento del alcance funcional estructurado para la dupla Hardware-Conectividad. Esto incluye la adquisición de datos, el enrutamiento bidireccional a través de MQTT y la integración con la interfaz de control móvil (excluyendo la capa opcional de IA).
     - Limitaciones detectadas: El RNF-03 no pudo cumplirse para distancias de 5 cm. Los datos concluyen cuantitativamente que el HC-SR04, especialmente bajo ligeras vibraciones o movimiento, no es viable para proximidad extrema.
     - Mejora arquitectónica: El uso del filtro de mediana mitigó drásticamente las fluctuaciones que el sensor ultrasónico presentaba en bruto. Absorbió con éxito los errores aleatorios de $\pm 3$ cm y logró entregar datos lo suficientemente estables para su monitoreo gráfico en tiempo real en la aplicación.
+    - Eficacia de la IA en IoT: La implementación de agentes MCP demostró que es posible abstraer la complejidad técnica de los protocolos industriales (MQTT) para un usuario final, permitiendo el control de infraestructura física mediante lenguaje natural y razonamiento lógico automatizado por el modelo Claude.
